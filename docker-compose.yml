@@ -1,0 +1,90 @@
+services:
+  pg-radius:
+    image: postgres
+    container_name: pg-radius
+    restart: always
+    environment:
+      POSTGRES_DB: radius
+      POSTGRES_USER: radius
+      POSTGRES_PASSWORD: radius
+      TZ: Asia/Makassar
+    volumes:
+      - wallet-ms-pg-data:/var/lib/postgresql/data
+      - ./postgres:/docker-entrypoint-initdb.d
+      - ./postgres_conf/postgresql.conf:/etc/postgresql/postgresql.conf
+    ports:
+      - "5432:5432"
+    command: ["postgres", "-c", "config_file=/etc/postgresql/postgresql.conf"]
+    networks:
+      - wallet-ms-backend
+
+  mysql-radius:
+    image: mysql:8.0
+    container_name: mysql-radius
+    restart: always
+    environment:
+      MYSQL_DATABASE: radius
+      MYSQL_USER: radius
+      MYSQL_PASSWORD: radius
+      MYSQL_ROOT_PASSWORD: radius
+      TZ: Asia/Makassar
+    ports:
+      - "3306:3306"
+    volumes:
+      - wallet-ms-mysql-data:/var/lib/mysql
+      - ./mysql:/docker-entrypoint-initdb.d
+    networks:
+      - wallet-ms-backend
+
+  freeradius:
+    build: ./freeradius
+    container_name: freeradius
+    environment:
+      - TZ=Asia/Makassar
+    restart: always
+    depends_on:
+      - mysql-radius
+    ports:
+      - "1812:1812/udp"
+      - "1813:1813/udp"
+    networks:
+      - wallet-ms-backend
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.0.0
+    container_name: es
+    restart: always
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - TZ=Asia/Makassar
+    ports:
+      - "9200:9200"
+    volumes:
+      - wallet-ms-es-data:/usr/share/elasticsearch/data
+    networks:
+      - wallet-ms-backend
+
+  redis:
+    image: redis:7.2
+    container_name: redis-server
+    environment:
+      - TZ=Asia/Makassar
+    ports:
+      - "6379:6379"
+    volumes:
+      - wallet-ms-redis-data:/data
+    restart: unless-stopped
+    networks:
+      - wallet-ms-backend
+
+
+volumes:
+  wallet-ms-pg-data:
+  wallet-ms-mysql-data:
+  wallet-ms-es-data:
+  wallet-ms-redis-data:
+
+networks:
+  wallet-ms-backend:
+    external: true
