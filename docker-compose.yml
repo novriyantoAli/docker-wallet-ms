@@ -9,7 +9,7 @@ services:
       POSTGRES_PASSWORD: radius
       TZ: Asia/Makassar
     volumes:
-      - wallet-ms-pg-data:/var/lib/postgresql/data
+      - wallet-ms-pg-data:/var/lib/postgresql
       - ./postgres:/docker-entrypoint-initdb.d
       - ./postgres_conf/postgresql.conf:/etc/postgresql/postgresql.conf
     ports:
